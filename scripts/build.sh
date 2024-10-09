@@ -85,6 +85,9 @@ else
 	echo "build rbxl"
 	cd "$build_dir"
 	rojo build "$ROJO_CONFIG" -o "Package.rbxl"
-	run: rm -rf "$build_dir/$MODEL_ROJO_CONFIG"
-	run: rm -rf "$build_dir/$ROJO_CONFIG"
+	if [ "$is_wally" = true ]; then
+		rm -rf "${build_dir:?$MODEL_ROJO_CONFIG}"
+		rm -rf "${build_dir:?$ROJO_CONFIG}"
+		cp -r default.project.json "${build_dir:?default.project.json}"
+	fi
 fi

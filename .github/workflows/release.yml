@@ -66,9 +66,6 @@ jobs:
       - name: build
         run: sh scripts/build.sh --wally
 
-      - name: copy over default.project.json
-        run: cp -r default.project.json build/default.project.json
-
       - name: Update version and labels
         shell: bash
         run: |
