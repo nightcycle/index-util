@@ -40,8 +40,6 @@ cp -r "$MODEL_ROJO_CONFIG" "$build_dir/$MODEL_ROJO_CONFIG"
 cp -r "$DARKLUA_CONFIG" "$build_dir/$DARKLUA_CONFIG"
 
 if [ "$is_wally" = true ]; then
-	echo "wally project detected, copying model.project.json to default.project.json"
-	cp -r "$MODEL_ROJO_CONFIG" "$build_dir/default.project.json"
 	cp -r "wally.toml" "$build_dir/wally.toml"
 	cp -r "aftman.toml" "$build_dir/aftman.toml"
 fi
@@ -86,8 +84,8 @@ else
 	cd "$build_dir"
 	rojo build "$ROJO_CONFIG" -o "Package.rbxl"
 	if [ "$is_wally" = true ]; then
+		cp -r default.project.json "$build_dir/default.project.json"
 		rm -rf "$build_dir/$MODEL_ROJO_CONFIG"
 		rm -rf "$build_dir/$ROJO_CONFIG"
-		cp -r default.project.json "$build_dir/default.project.json"
 	fi
 fi
