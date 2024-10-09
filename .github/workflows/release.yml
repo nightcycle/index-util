@@ -61,6 +61,15 @@ jobs:
       - name: build validate project
         run: sh scripts/validate.sh --wally
 
+      - name: remove model.project.json
+        run: rm -rf build/model.project.json
+
+      - name: remove "${{env.ROJO_CONFIG}}"
+        run: rm -rf build/${{env.ROJO_CONFIG}}
+
+      - name: copy over default.project.json
+        run: cp -r default.project.json build/default.project.json
+
       - name: Update version and labels
         shell: bash
         run: |
