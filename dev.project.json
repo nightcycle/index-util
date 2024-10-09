@@ -2,12 +2,9 @@
 	"name": "index-util-dev",
 	"tree": {
 		"$className": "DataModel",
-		"ServerStorage": {
-			"Packages": {
-				"$path": "Packages",
-				"Package": {
-					"$path": "model.project.json"
-				}
+		"ReplicatedStorage": {
+			"package": {
+				"$path": "model.project.json"
 			}
 		}
 	}
