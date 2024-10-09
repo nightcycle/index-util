@@ -58,8 +58,11 @@ jobs:
       - name: install wally
         run: sh scripts/wally-install.sh "${{env.ROJO_CONFIG}}"
 
-      - name: build validate project
+      - name: validate project
         run: sh scripts/validate.sh --wally
+
+      - name: build
+        run: sh scripts/build.sh --wally
 
       - name: remove model.project.json
         run: rm -rf build/model.project.json
