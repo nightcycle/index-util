@@ -85,4 +85,6 @@ else
 	echo "build rbxl"
 	cd "$build_dir"
 	rojo build "$ROJO_CONFIG" -o "Package.rbxl"
+	run: rm -rf "$build_dir/$MODEL_ROJO_CONFIG"
+	run: rm -rf "$build_dir/$ROJO_CONFIG"
 fi

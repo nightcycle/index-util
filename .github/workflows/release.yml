@@ -45,6 +45,8 @@ jobs:
     needs: get_published_release
     runs-on: windows-latest
     env:
+      LC_ALL: C.UTF-8
+      LANG: C.UTF-8
       ROJO_CONFIG: "dev.project.json"
       RBXL_FILE: "build/Package.rbxl"
     steps:
@@ -63,12 +65,6 @@ jobs:
 
       - name: build
         run: sh scripts/build.sh --wally
-
-      - name: remove model.project.json
-        run: rm -rf build/model.project.json
-
-      - name: remove "${{env.ROJO_CONFIG}}"
-        run: rm -rf build/${{env.ROJO_CONFIG}}
 
       - name: copy over default.project.json
         run: cp -r default.project.json build/default.project.json
