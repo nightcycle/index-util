@@ -1,12 +1,11 @@
 
 
 # Directories
-out/**
 Packages/**
 types
 lints
-tests/lsp/**
-tests/selene/**
+build
+serve
 
 # Files
 sourcemap.json
@@ -18,5 +17,5 @@ keys.txt
 *.lock
 *.gitconfig
 *.rbxlx
-*.lock
+*.rbxl
 
