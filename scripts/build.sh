@@ -86,8 +86,8 @@ else
 	cd "$build_dir"
 	rojo build "$ROJO_CONFIG" -o "Package.rbxl"
 	if [ "$is_wally" = true ]; then
-		rm -rf "${build_dir:?$MODEL_ROJO_CONFIG}"
-		rm -rf "${build_dir:?$ROJO_CONFIG}"
-		cp -r default.project.json "${build_dir:?default.project.json}"
+		rm -rf "$build_dir/$MODEL_ROJO_CONFIG"
+		rm -rf "$build_dir/$ROJO_CONFIG"
+		cp -r default.project.json "$build_dir/default.project.json"
 	fi
 fi
