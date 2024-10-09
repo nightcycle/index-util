@@ -38,6 +38,7 @@ echo "copying contents to $build_dir"
 cp -r "$ROJO_CONFIG" "$build_dir/$ROJO_CONFIG"
 cp -r "$MODEL_ROJO_CONFIG" "$build_dir/$MODEL_ROJO_CONFIG"
 cp -r "$DARKLUA_CONFIG" "$build_dir/$DARKLUA_CONFIG"
+cp -r "default.project.json" "$build_dir/default.project.json"
 
 if [ "$is_wally" = true ]; then
 	cp -r "wally.toml" "$build_dir/wally.toml"
@@ -84,7 +85,6 @@ else
 	cd "$build_dir"
 	rojo build "$ROJO_CONFIG" -o "Package.rbxl"
 	if [ "$is_wally" = true ]; then
-		cp -r default.project.json "$build_dir/default.project.json"
 		rm -rf "$build_dir/$MODEL_ROJO_CONFIG"
 		rm -rf "$build_dir/$ROJO_CONFIG"
 	fi
