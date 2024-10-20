@@ -139,7 +139,7 @@ function Util.waitForPath(path: string, duration: number?): Instance
 	return index(1)
 end
 
-function Util.fromLocalPath(origin: Instance, path: string, duration: number?): Instance
+function Util.waitForLocalPath(origin: Instance, path: string, duration: number?): Instance
 	local keys = string.split(path, "/")
 	if keys[1] == "." then
 		table.remove(keys, 1)
@@ -153,6 +153,29 @@ function Util.fromLocalPath(origin: Instance, path: string, duration: number?): 
 
 		local child = source:WaitForChild(key, duration or DURATION)
 		assert(child, `no instance at "{key}" for path "{path}" under {source:GetFullName()}`)
+		source = child
+		return index(i + 1)
+	end
+	return index(1)
+end
+
+function Util.findFirstLocalPath(origin: Instance, path: string): Instance?
+	local keys = string.split(path, "/")
+	if keys[1] == "." then
+		table.remove(keys, 1)
+	end
+	local source: Instance = origin
+	local function index(i: number): Instance?
+		local key = keys[i]
+		if not key then
+			return source :: any
+		end
+
+		local child = source:FindFirstChild(key)
+		if not child then
+			return nil
+		end
+		assert(child)
 		source = child
 		return index(i + 1)
 	end
