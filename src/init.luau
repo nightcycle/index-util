@@ -96,7 +96,7 @@ function Util.findFirstMatch<V>(inst: Instance, process: (desc: Instance) -> V?,
 end
 
 
-function Util.findPath(path: string): Instance?
+function Util.findFirstPath(path: string): Instance?
 	local keys = string.split(path, "/")
 	if keys[1] == "game" then
 		table.remove(keys, 1)
