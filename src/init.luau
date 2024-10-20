@@ -95,7 +95,31 @@ function Util.findFirstMatch<V>(inst: Instance, process: (desc: Instance) -> V?,
 	return nil
 end
 
-function Util.fromPath(path: string, duration: number?): Instance
+
+function Util.findPath(path: string): Instance?
+	local keys = string.split(path, "/")
+	if keys[1] == "game" then
+		table.remove(keys, 1)
+	end
+	local source: Instance = game
+	local function index(i: number): Instance?
+		local key = keys[i]
+		if not key then
+			return source :: any
+		end
+
+		local child = source:FindFirstChild(key)
+		if not child then
+			return nil
+		end
+		assert(child)
+		source = child
+		return index(i + 1)
+	end
+	return index(1)
+end
+
+function Util.waitForPath(path: string, duration: number?): Instance
 	local keys = string.split(path, "/")
 	if keys[1] == "game" then
 		table.remove(keys, 1)
