@@ -31,7 +31,7 @@ function Util.waitForMatch<V>(
 
 	local thread: thread?
 
-	local cleanUp = function(): ()
+	local cleanUp = function(isTimeout: boolean): ()
 		if not isAlive then
 			return
 		end
@@ -41,15 +41,17 @@ function Util.waitForMatch<V>(
 		onAdded:Disconnect()
 		signal:Fire()
 		signal:Destroy()
-		if thread then
+		if thread and isTimeout == false then
 			task.cancel(thread)
 		end
 	end
-	deathConnection = inst.Destroying:Connect(cleanUp)
+	deathConnection = inst.Destroying:Connect(function()
+		cleanUp(false)
+	end)
 
 	if yield then
 		thread = task.delay(yield, function()
-			cleanUp()
+			cleanUp(true)
 		end)
 	end
 
@@ -72,7 +74,7 @@ function Util.waitForMatch<V>(
 		signal:Wait()
 	end
 
-	cleanUp()
+	cleanUp(false)
 	return match
 end
 
