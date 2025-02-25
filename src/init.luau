@@ -82,21 +82,50 @@ function Util.waitForMatch<V>(
 	return match
 end
 
-function Util.matchChildAsync<V>(inst: Instance, process: (desc: Instance) -> V?, yield: Option<number>): Future<Option<V>>
+local matchChildAsync: (
+	<V>(inst: Instance, matchOn: (desc: Instance) -> V?, yield: Option<number>) -> Future<Option<V>>
+) & (
+	(inst: Instance, matchOn: string, yield: Option<number>) -> Future<Option<Instance>>
+) = (function(inst: Instance, matchOn, yield: Option<number>)
 	return Future.from(function()
 		return Option.try(function()
-			return Util.waitForMatch(inst, process, yield:unwrapOr(nil :: any) :: number?, false)
+			if typeof(matchOn) == "string" then
+				return Util.waitForMatch(inst, function(desc: Instance): Instance?
+					return if desc.Name == matchOn then
+						desc
+					else
+						nil
+				end, yield:unwrapOr(nil :: any) :: number?, false)
+			else
+				return Util.waitForMatch(inst, matchOn, yield:unwrapOr(nil :: any) :: number?, false)
+			end
 		end)
 	end)
-end
+end) :: any
 
-function Util.matchDescendantAsync<V>(inst: Instance, process: (desc: Instance) -> V?, yield: Option<number>): Future<Option<V>>
+Util.matchChildAsync = matchChildAsync
+
+local matchDescendantAsync: (
+	<V>(inst: Instance, matchOn: (desc: Instance) -> V?, yield: Option<number>) -> Future<Option<V>>
+) & (
+	(inst: Instance, matchOn: string, yield: Option<number>) -> Future<Option<Instance>>
+) = (function (inst: Instance, matchOn, yield: Option<number>)
 	return Future.from(function()
 		return Option.try(function()
-			return Util.waitForMatch(inst, process, yield:unwrapOr(nil :: any) :: number?, true)
+			if typeof(matchOn) == "string" then
+				return Util.waitForMatch(inst, function(desc: Instance): Instance?
+					return if desc.Name == matchOn then
+						desc
+					else
+						nil
+				end, yield:unwrapOr(nil :: any) :: number?, true)
+			else
+				return Util.waitForMatch(inst, matchOn, yield:unwrapOr(nil :: any) :: number?, true)
+			end
 		end)
 	end)
-end
+end) :: any
+Util.matchDescendantAsync = matchDescendantAsync
 
 function Util.findFirstMatch<V>(inst: Instance, process: (desc: Instance) -> V?, recursive: boolean?): V?
 	if recursive then
@@ -117,17 +146,45 @@ function Util.findFirstMatch<V>(inst: Instance, process: (desc: Instance) -> V?,
 	return nil
 end
 
-function Util.matchChild<V>(inst: Instance, process: (desc: Instance) -> V?): Option<V>
+local matchChild: (
+	<V>(inst: Instance, matchOn: (desc: Instance) -> V?) -> Option<V>
+) & (
+	(inst: Instance, matchOn: string) -> Option<Instance>
+) = (function(inst: Instance, matchOn)
 	return Option.try(function()
-		return Util.findFirstMatch(inst, process, false)
+		if typeof(matchOn) == "string" then
+			return Util.findFirstMatch(inst, function(desc)
+				return if desc.Name == matchOn then
+					desc
+				else
+					nil
+			end, false)
+		else
+			return Util.findFirstMatch(inst, matchOn, false)
+		end
 	end)
-end
+end) :: any
+Util.matchChild = matchChild
 
-function Util.matchDescendant<V>(inst: Instance, process: (desc: Instance) -> V?): Option<V>
+local matchDescendant: (
+	<V>(inst: Instance, matchOn: (desc: Instance) -> V?) -> Option<V>
+) & (
+	(inst: Instance, matchOn: string) -> Option<Instance>
+) = (function(inst: Instance, matchOn)
 	return Option.try(function()
-		return Util.findFirstMatch(inst, process, true)
+		if typeof(matchOn) == "string" then
+			return Util.findFirstMatch(inst, function(desc)
+				return if desc.Name == matchOn then
+					desc
+				else
+					nil
+			end, true)
+		else
+			return Util.findFirstMatch(inst, matchOn, true)
+		end
 	end)
-end
+end) :: any
+Util.matchDescendant = matchDescendant
 
 function Util.findFirstPath(path: string): Instance?
 	local keys = string.split(path, "/")
