@@ -2,8 +2,12 @@
 -- Services
 -- Packages
 local Signal = require("@wally/Signal")
+local Option = require("@wally/Option")
+local Future = require("@wally/Future")
 -- Modules
 -- Types
+type Future<V> = Future.Future<V>
+type Option<V> = Option.Option<V>
 -- Constants
 local DURATION = 10
 local LOG_ENABLED = false
@@ -78,6 +82,22 @@ function Util.waitForMatch<V>(
 	return match
 end
 
+function Util.matchChildAsync<V>(inst: Instance, process: (desc: Instance) -> V?, yield: Option<number>): Future<Option<V>>
+	return Future.from(function()
+		return Option.try(function()
+			return Util.waitForMatch(inst, process, yield:unwrapOr(nil :: any) :: number?, false)
+		end)
+	end)
+end
+
+function Util.matchDescendantAsync<V>(inst: Instance, process: (desc: Instance) -> V?, yield: Option<number>): Future<Option<V>>
+	return Future.from(function()
+		return Option.try(function()
+			return Util.waitForMatch(inst, process, yield:unwrapOr(nil :: any) :: number?, true)
+		end)
+	end)
+end
+
 function Util.findFirstMatch<V>(inst: Instance, process: (desc: Instance) -> V?, recursive: boolean?): V?
 	if recursive then
 		for i, v in ipairs(inst:GetDescendants()) do
@@ -97,6 +117,17 @@ function Util.findFirstMatch<V>(inst: Instance, process: (desc: Instance) -> V?,
 	return nil
 end
 
+function Util.matchChild<V>(inst: Instance, process: (desc: Instance) -> V?): Option<V>
+	return Option.try(function()
+		return Util.findFirstMatch(inst, process, false)
+	end)
+end
+
+function Util.matchDescendant<V>(inst: Instance, process: (desc: Instance) -> V?): Option<V>
+	return Option.try(function()
+		return Util.findFirstMatch(inst, process, true)
+	end)
+end
 
 function Util.findFirstPath(path: string): Instance?
 	local keys = string.split(path, "/")
@@ -121,7 +152,13 @@ function Util.findFirstPath(path: string): Instance?
 	return index(1)
 end
 
-function Util.waitForPath(path: string, duration: number?): Instance
+function Util.matchPath(path: string): Option<Instance>
+	return Option.try(function()
+		return Util.findFirstPath(path)
+	end)
+end
+
+function Util.waitForPath(path: string, duration: number?): Instance?
 	local keys = string.split(path, "/")
 	if keys[1] == "game" then
 		table.remove(keys, 1)
@@ -141,12 +178,20 @@ function Util.waitForPath(path: string, duration: number?): Instance
 	return index(1)
 end
 
-function Util.waitForLocalPath(origin: Instance, path: string, duration: number?): Instance
+function Util.matchPathAsync(path: string, duration: Option<number>): Future<Option<Instance>>
+	return Future.from(function()
+		return Option.try(function()
+			return Util.waitForPath(path, duration:unwrapOr(nil :: any) :: number?)
+		end)
+	end)
+end
+
+function Util.waitForLocalPath(root: Instance, path: string, duration: number?): Instance?
 	local keys = string.split(path, "/")
 	if keys[1] == "." then
 		table.remove(keys, 1)
 	end
-	local source: Instance = origin
+	local source: Instance = root
 	local function index(i: number): Instance
 		local key = keys[i]
 		if not key then
@@ -161,12 +206,20 @@ function Util.waitForLocalPath(origin: Instance, path: string, duration: number?
 	return index(1)
 end
 
-function Util.findFirstLocalPath(origin: Instance, path: string): Instance?
+function Util.matchLocalPathAsync(root: Instance, path: string, duration: Option<number>): Future<Option<Instance>>
+	return Future.from(function()
+		return Option.try(function()
+			return Util.waitForLocalPath(root, path, duration:unwrapOr(nil :: any) :: number?)
+		end)
+	end)
+end
+
+function Util.findFirstLocalPath(root: Instance, path: string): Instance?
 	local keys = string.split(path, "/")
 	if keys[1] == "." then
 		table.remove(keys, 1)
 	end
-	local source: Instance = origin
+	local source: Instance = root
 	local function index(i: number): Instance?
 		local key = keys[i]
 		if not key then
@@ -182,6 +235,12 @@ function Util.findFirstLocalPath(origin: Instance, path: string): Instance?
 		return index(i + 1)
 	end
 	return index(1)
+end
+
+function Util.matchLocalPath(root: Instance, path: string): Option<Instance>
+	return Option.try(function()
+		return Util.findFirstLocalPath(root, path)
+	end)
 end
 
 return Util

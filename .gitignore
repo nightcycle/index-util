@@ -9,6 +9,7 @@ serve
 
 # Files
 sourcemap.json
+darklua-sourcemap.json
 wally.lock
 package-lock.json
 keys.txt
