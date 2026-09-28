@@ -1,13 +1,12 @@
 [package]
-name = "nightcycle/package"
-description = "A package!"
-version = "0.1.0"
-authors = ["CJ Oyer <coyer@nightcycle.us>"]
+name = "nightcycle/index-util"
+description = "some handy utilities for finding instances"
+version = "3.0.0"
+license = "Apache"
+registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"
-registry = "https://github.com/upliftgames/wally-index"
-exclude = ["Packages", ".vscode"]
+include = ["src", "default.project.json", "LICENSE"]
+
 
 [dependencies]
-Signal = "nightcycle/signal@^1.0"
-Future = "nightcycle/future@^1"
-Option = "nightcycle/option@^1"
+TypeUnionLib = "nightcycle/type-union-lib@*"
