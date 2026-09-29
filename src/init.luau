@@ -15,7 +15,7 @@ local GLOBAL_FIRST_KEYS = { "src", "game", ".", "", "@game" }
 -- Variables
 -- References
 -- Private Functions
-function errMessage(
+local function errMessage(
 	reason: string,
 	path: string,
 	root: Instance?,
@@ -27,14 +27,20 @@ function errMessage(
 		.. (if separator then ` with separator "{separator}"` else "")
 		.. (if filteredInitialKeys then ` using filtered keys [{table.concat(filteredInitialKeys, ",")}]` else "")
 end
-function yieldUntil<V>(fn: () -> V?, duration: number?, warnMsg: string, isSilent: boolean?, getIfCanceled: () -> ()?): V?
+local function yieldUntil<V>(
+	fn: () -> V?,
+	duration: number?,
+	warnMsg: string,
+	isSilent: boolean?,
+	getIfCanceled: (() -> boolean)?
+): V?
 	local v = fn()
 	do
 		local start = tick()
 		local didWarn = false
 		while v == nil do
 			local elapsedT = tick() - start
-			if getIfCanceled then
+			if getIfCanceled and getIfCanceled() then
 				break
 			end
 			if duration and elapsedT > duration then
@@ -51,37 +57,37 @@ function yieldUntil<V>(fn: () -> V?, duration: number?, warnMsg: string, isSilen
 	end
 	return v
 end
-function findFirstMatch<V>(inst: Instance, process: (desc: Instance) -> V?, recursive: boolean?): V?
+local function findFirstMatch<V>(inst: Instance, process: (desc: Instance) -> V?, recursive: boolean?): V?
 	if recursive then
 		for i, v in ipairs(inst:GetDescendants()) do
 			local result = process(v)
-			if result then
+			if result ~= nil then
 				return result
 			end
 		end
 	else
 		for i, v in ipairs(inst:GetChildren()) do
 			local result = process(v)
-			if result then
+			if result ~= nil then
 				return result
 			end
 		end
 	end
 	return nil
 end
-function waitForMatchWithCancel<V>(
+local function waitForMatchWithCancel<V>(
 	inst: Instance,
 	process: (desc: Instance) -> V?,
 	yield: number?,
 	recursive: boolean?,
 	isSilent: boolean?,
-	getIfCanceled: () -> ()?
+	getIfCanceled: (() -> boolean)?
 ): V?
 	local isAlive = true
 	local deathConnection: RBXScriptConnection
 	local onAdded: RBXScriptConnection
 
-	local cleanUp = function(isTimeout: boolean): ()
+	local cleanUp = function(): ()
 		if not isAlive then
 			return
 		end
@@ -92,16 +98,20 @@ function waitForMatchWithCancel<V>(
 	local isDead = false
 	deathConnection = inst.Destroying:Connect(function()
 		isDead = true
-		cleanUp(false)
+		cleanUp()
 	end)
 
 	local match: V?
+	local processError: string?
 	local onNewChild = function(descendant: Instance)
-		if match then
+		if not isAlive or match ~= nil then
 			return
 		end
-		local potentialMatch = process(descendant)
-		if potentialMatch then
+		local success, potentialMatch = pcall(process, descendant)
+		if not success then
+			processError = tostring(potentialMatch)
+			cleanUp()
+		elseif isAlive and match == nil and potentialMatch ~= nil then
 			match = potentialMatch
 		end
 	end
@@ -112,20 +122,35 @@ function waitForMatchWithCancel<V>(
 		onAdded = inst.ChildAdded:Connect(onNewChild)
 	end
 
-	match = findFirstMatch(inst, process, recursive)
-	local outRes: Result<V, nil>? = yieldUntil(
-		function(): Result<V, nil>?
-			if isDead or (getIfCanceled and getIfCanceled() == true) then
-				return Result.err(nil)
-			elseif match then
-				return Result.ok(match)
-			end
-			return nil
-		end,
-		yield,
-		`Infinite yield possible on waitForMatch({inst:GetFullName()}, recursive={recursive == true})`,
-		isSilent
-	)
+	local outRes: Result<V, nil>?
+	local success, message = pcall(function()
+		local initialMatch = findFirstMatch(inst, process, recursive)
+		if match == nil then
+			match = initialMatch
+		end
+		outRes = yieldUntil(
+			function(): Result<V, nil>?
+				if processError ~= nil then
+					error(processError, 0)
+				elseif isDead or (getIfCanceled and getIfCanceled()) then
+					return Result.err(nil)
+				elseif match ~= nil then
+					return Result.ok(match)
+				end
+				return nil
+			end,
+			yield,
+			`Infinite yield possible on waitForMatch({inst:GetFullName()}, recursive={recursive == true})`,
+			isSilent
+		)
+	end)
+	cleanUp()
+	if not success then
+		error(message, 0)
+	end
+	if getIfCanceled and getIfCanceled() then
+		return nil
+	end
 	if outRes then
 		if outRes.IsOk then
 			return outRes.Value
@@ -138,7 +163,7 @@ function waitForMatchWithCancel<V>(
 		return nil
 	end
 end
-function findFirstLocalPath(
+local function findFirstLocalPath(
 	root: Instance,
 	path: string,
 	separator: string?,
@@ -170,15 +195,15 @@ function findFirstLocalPath(
 	end
 	return index(1)
 end
-function waitForLocalPathWithCancel<V>(
+local function waitForLocalPathWithCancel(
 	root: Instance,
 	path: string,
 	duration: number?,
 	separator: string?,
 	filteredInitialKeys: { string }?,
 	isSilent: boolean?,
-	getIfCanceled: () -> ()?
-): V?
+	getIfCanceled: (() -> boolean)?
+): Instance?
 	return yieldUntil(function()
 		return findFirstLocalPath(root, path, separator, filteredInitialKeys)
 	end, duration, errMessage(`Infinite yield possible`, path, nil, separator), isSilent, getIfCanceled)
@@ -254,9 +279,14 @@ Util.getFutureLocalPath = function(
 	path: string,
 	separator: string?,
 	filteredInitialKeys: { string }?
-): any
-	return Future.toDo(function(complete, getIfCancelled)
-		Util.waitForLocalPath(root, path, nil, separator, filteredInitialKeys, true)
+): ToDo<Instance>
+	return Future.toDo(function(complete: (Instance) -> (), getIfCancelled: () -> boolean)
+		local hit = waitForLocalPathWithCancel(root, path, nil, separator, filteredInitialKeys, true, getIfCancelled)
+		if getIfCancelled() then
+			return
+		end
+		assert(hit, `hit shouldn't be null`)
+		complete(hit)
 	end)
 end
 
@@ -265,14 +295,7 @@ Util.waitForPath = function(path: string, duration: number?, separator: string?,
 end :: ((path: string, duration: nil, separator: string?, isSilent: boolean?) -> Instance) & ((path: string, duration: number, separator: string?, isSilent: boolean?) -> Instance?)
 
 Util.getFuturePath = function(path: string, separator: string?): ToDo<Instance>
-	return Future.toDo(function(complete: (Instance) -> (), getIfCancelled)
-		local hit = waitForLocalPathWithCancel(game, path, nil, separator, GLOBAL_FIRST_KEYS, true, getIfCancelled)
-		if getIfCancelled() then
-			return
-		end
-		assert(hit, `hit shouldn't be null`)
-		complete(hit)
-	end)
+	return Util.getFutureLocalPath(game, path, separator, GLOBAL_FIRST_KEYS)
 end
 
 function Util.findFirstMatch<V>(inst: Instance, process: (desc: Instance) -> V?, recursive: boolean?): V?
@@ -319,14 +342,14 @@ Util.getFutureMatch = function<V>(
 ): ToDo<Result<V, string>>
 	return Future.toDo(function(complete: (Result<V, string>) -> (), getIfCancelled)
 		local hit: V?
-		local _, msg = pcall(function()
+		local success, msg = pcall(function()
 			hit = waitForMatchWithCancel(inst, process, nil, recursive, true, getIfCancelled)
 		end)
 		if getIfCancelled() then
 			return
 		end
-		if msg then
-			complete(Result.err(msg))
+		if not success then
+			complete(Result.err(tostring(msg)))
 		else
 			assert(hit ~= nil, `hit should have been assigned`)
 			complete(Result.ok(hit))
