@@ -1,7 +1,7 @@
 [package]
 name = "nightcycle/index-util"
 description = "some handy utilities for finding instances"
-version = "3.0.0"
+version = "3.1.0"
 license = "Apache"
 registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"
@@ -9,4 +9,4 @@ include = ["src", "default.project.json", "LICENSE"]
 
 
 [dependencies]
-TypeUnionLib = "nightcycle/type-union-lib@^0.2"
+TypeUnionLib = "nightcycle/type-union-lib@^0.3"

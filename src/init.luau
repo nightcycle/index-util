@@ -280,13 +280,13 @@ Util.getFutureLocalPath = function(
 	separator: string?,
 	filteredInitialKeys: { string }?
 ): ToDo<Instance>
-	return Future.toDo(function(complete: (Instance) -> (), getIfCancelled: () -> boolean)
+	return Future.toDo(function(getIfCancelled: () -> boolean)
 		local hit = waitForLocalPathWithCancel(root, path, nil, separator, filteredInitialKeys, true, getIfCancelled)
 		if getIfCancelled() then
 			return
 		end
 		assert(hit, `hit shouldn't be null`)
-		complete(hit)
+		return hit
 	end)
 end
 
@@ -340,7 +340,7 @@ Util.getFutureMatch = function<V>(
 	process: (desc: Instance) -> V?,
 	recursive: boolean?
 ): ToDo<Result<V, string>>
-	return Future.toDo(function(complete: (Result<V, string>) -> (), getIfCancelled)
+	return Future.toDo(function(getIfCancelled): Result<V, string>?
 		local hit: V?
 		local success, msg = pcall(function()
 			hit = waitForMatchWithCancel(inst, process, nil, recursive, true, getIfCancelled)
@@ -349,10 +349,10 @@ Util.getFutureMatch = function<V>(
 			return
 		end
 		if not success then
-			complete(Result.err(tostring(msg)))
+			return Result.err(tostring(msg))
 		else
 			assert(hit ~= nil, `hit should have been assigned`)
-			complete(Result.ok(hit))
+			return Result.ok(hit)
 		end
 	end)
 end
