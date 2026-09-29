@@ -9,4 +9,4 @@ include = ["src", "default.project.json", "LICENSE"]
 
 
 [dependencies]
-TypeUnionLib = "nightcycle/type-union-lib@*"
+TypeUnionLib = "nightcycle/type-union-lib@^0.2"
